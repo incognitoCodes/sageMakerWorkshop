@@ -1,1 +1,1 @@
-# pssummitwkshp
+# SageMaker Workshop for image classification
