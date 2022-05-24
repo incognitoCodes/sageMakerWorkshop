@@ -4,9 +4,10 @@ import json
 import numpy as np
 import os
 from tensorflow.keras.callbacks import ReduceLROnPlateau
-# new additions
 from smdebug.tensorflow import KerasHook
 import time
+from tensorflow.keras.preprocessing import image_dataset_from_directory
+
 
 print("done with imports")
 print(tf.__version__)
@@ -20,7 +21,6 @@ NUM_CLASSES = 3
 BATCH_SIZE = 8
 CLASSES = ["Priority", "Roundabout", "Signal"]
 
-# new additions star
 def between_steps_bottleneck():
     time.sleep(1)
 
@@ -30,7 +30,6 @@ class CustomCallback(tf.keras.callbacks.Callback):
         if 10 <= batch < 20:
             between_steps_bottleneck()
             
-#END
             
 def keras_model_fn(train_batches, val_batches, enable_bottleneck):
     
@@ -65,16 +64,10 @@ def keras_model_fn(train_batches, val_batches, enable_bottleneck):
     x = tf.keras.layers.Dropout(0.2)(x)
     outputs = prediction_layer(x)
     model = tf.keras.Model(inputs, outputs)
-    base_learning_rate = 0.0002
+    base_learning_rate = args.learning_rate
     model.compile(loss=tf.keras.losses.CategoricalCrossentropy(),
                   optimizer = tf.keras.optimizers.SGD(),
                   metrics=['accuracy'])
-
-    # Estimate class weights for unbalanced dataset
-    # class_weights = class_weight.compute_class_weight(
-    #                'balanced',
-    #                 np.unique(train_batches.classes),
-    #                 train_batches.classes)
 
     ReduceLR = ReduceLROnPlateau(monitor='val_loss', factor=0.2,
                                  patience=5, min_lr=3e-4)
@@ -85,7 +78,7 @@ def keras_model_fn(train_batches, val_batches, enable_bottleneck):
 
     model.fit(train_batches,
                         validation_data=val_batches,
-                        epochs=1,
+                        epochs=args.epochs,
                         callbacks=callbacks)
     return model
 
@@ -96,12 +89,6 @@ def train_input_fn(training_dir, hyperparameters):
 
 def eval_input_fn(training_dir, hyperparameters):
     return _input(tf.estimator.ModeKeys.EVAL, batch_size=BATCH_SIZE, data_dir=training_dir)
-
-
-import os
-# from tensorflow.python.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.preprocessing import image_dataset_from_directory
-
 
 
 def _input(mode, batch_size, data_dir):
@@ -138,6 +125,10 @@ def _parse_args():
     parser.add_argument('--train', type=str, default=os.environ.get('SM_CHANNEL_TRAINING'))
     parser.add_argument('--hosts', type=list, default=json.loads(os.environ.get('SM_HOSTS')))
     parser.add_argument('--current-host', type=str, default=os.environ.get('SM_CURRENT_HOST'))
+    
+    # Hyperparameters 
+    parser.add_argument("--epochs", type=int, default=1)
+    parser.add_argument("--learning_rate", type=float, default=0.002)
 
     return parser.parse_known_args()
 
@@ -165,7 +156,7 @@ if __name__ == "__main__":
     junction_classifier = keras_model_fn(train_dataset, valid_dataset, True)
     print("about to save")
 
-    if args.current_host == args.hosts[0]:
+    if args.current_host == args.hosts[0]:  # this is essential for distributed training where we have multiple hosts and we only want to save the model to the master host
         
         # save model to an S3 directory with version number '00000001'
         # sound_classifier.save(os.path.join(args.sm_model_dir, '000000001'), 'sound_model.h5')
