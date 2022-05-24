@@ -154,7 +154,7 @@ if __name__ == "__main__":
                                  image_size=IM_SIZE,label_mode='categorical')
 
 
-    valid_dataset = image_dataset_from_directory(data_dir + '/test',
+    valid_dataset = image_dataset_from_directory(data_dir + '/val',
                                                     image_size=IM_SIZE,
                                                     label_mode='categorical', shuffle=False,
                                                     batch_size=BATCH_SIZE)

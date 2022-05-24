@@ -87,7 +87,7 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
     return correct_predictions.double() / n_examples, np.mean(losses)
 
 
-def train_model(model, data_loaders, dataset_sizes, device,model_dir,n_epochs=10):
+def train_model(model, data_loaders, dataset_sizes, device,model_dir,n_epochs=5):
     optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
     loss_fn = nn.CrossEntropyLoss().to(device)
