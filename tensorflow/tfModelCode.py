@@ -117,17 +117,22 @@ def _parse_args():
     import argparse
 
     parser = argparse.ArgumentParser()
-
-    # Data, model, and output directories
+    
     # model_dir is always passed in from SageMaker. By default this is a S3 path under the default bucket.
     parser.add_argument('--model_dir', type=str)
-    parser.add_argument('--sm-model-dir', type=str, default=os.environ.get('SM_MODEL_DIR'))
+    
+    # 'SM_MODEL_DIR' represents the local path where the training job writes the model artifacts to. After training, artifacts in this directory are uploaded to S3 for model hosting.
+    parser.add_argument('--sm-model-dir', type=str, default=os.environ.get('SM_MODEL_DIR'))  
+    
+    # 'SM_CHANNEL_TRAINING' represents the path to the directory that contains the input data for the specified channel.
     parser.add_argument('--train', type=str, default=os.environ.get('SM_CHANNEL_TRAINING'))
+    
+    # Available instances (hosts) and current instance being used (current host) 
     parser.add_argument('--hosts', type=list, default=json.loads(os.environ.get('SM_HOSTS')))
     parser.add_argument('--current-host', type=str, default=os.environ.get('SM_CURRENT_HOST'))
     
     # Hyperparameters 
-    parser.add_argument("--epochs", type=int, default=1)
+    parser.add_argument("--epochs", type=int, default=1)  # epoch default is set to 1 to reduce training time for workshop
     parser.add_argument("--learning_rate", type=float, default=0.002)
 
     return parser.parse_known_args()
