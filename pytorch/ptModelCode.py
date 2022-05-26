@@ -87,8 +87,10 @@ def eval_model(model, data_loader, loss_fn, device, n_examples):
     return correct_predictions.double() / n_examples, np.mean(losses)
 
 
-def train_model(model, data_loaders, dataset_sizes, device,model_dir,n_epochs=5):
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+def train_model(model, data_loaders, dataset_sizes, device,model_dir,n_epochs):
+    n_epochs = args.epochs
+    lr=args.learning_rate
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     scheduler = lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
     loss_fn = nn.CrossEntropyLoss().to(device)
 
@@ -137,7 +139,7 @@ def train_model(model, data_loaders, dataset_sizes, device,model_dir,n_epochs=5)
 
 #     model.load_state_dict(torch.load('best_model_state.bin'))
 
-    return
+    return model
 
 def _parse_args():
     import argparse
@@ -151,6 +153,10 @@ def _parse_args():
     parser.add_argument('--train', type=str, default=os.environ.get('SM_CHANNEL_TRAINING'))
     parser.add_argument('--hosts', type=list, default=json.loads(os.environ.get('SM_HOSTS')))
     parser.add_argument('--current-host', type=str, default=os.environ.get('SM_CURRENT_HOST'))
+    
+    # Hyperparameters 
+    parser.add_argument("--epochs", type=int, default=5)  # epoch default is set to 1 to reduce training time for workshop
+    parser.add_argument("--learning_rate", type=float, default=0.002)
 
     return parser.parse_known_args()
 
@@ -192,7 +198,7 @@ if __name__=="__main__":
 
     base_model = create_model(len(class_names))
 
-    train_model(base_model, data_loaders, dataset_sizes, device, model_dir=args.model_dir)
+    train_model(base_model, data_loaders, dataset_sizes, device, model_dir=args.model_dir,n_epochs=args.epochs)
 
 
 
