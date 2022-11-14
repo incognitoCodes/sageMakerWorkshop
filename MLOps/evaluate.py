@@ -103,8 +103,6 @@ if __name__ == "__main__":
         )
 
     print(f'accuracy {val_acc}')
-    print 
-
     
     report_dict = {
         "Test_set_metrics": {
